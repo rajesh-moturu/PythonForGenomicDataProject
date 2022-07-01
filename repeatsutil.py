@@ -33,10 +33,7 @@ def get_all_repeats(sequences, n):
         repeats = make_dict_with_repeats()
         # print(sorted(repeats.items()))
         most_freq_repeat, most_count = "", 0
-        check = ["CGCGCCG", "CATCGCC", "TGCGCGC", "AATGGCA"]
         for n_mer, count in repeats.items():
-            if n_mer in check:
-                print(f"repeat: {n_mer}, count: {count}")
             if count > most_count:
                 most_freq_n_mer, most_count = n_mer, count
         return most_freq_n_mer, most_count
