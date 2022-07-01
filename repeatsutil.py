@@ -14,16 +14,31 @@ from collections import Counter
 
 def get_all_repeats(sequences, n):
 
-    def get_repeats(sequence):
-        n_mers = [seq[i:i+n] for i in range(len(seq))]
+    def count_repeats_per_seq(sequence):
+        n_mers = [sequence[i:i+n] for i in range(len(sequence))]
         counts = dict(Counter(n_mers))
         repeats = dict([(n_mer, count) for n_mer, count in counts.items() if count > 1])
         return repeats
 
-    for id, seq in sequences.items():
-        repeats = get_repeats(seq)
-        sorted_repeats = dict(sorted(repeats.items(), key=lambda item: item[1]))
-        # get max repeat
-        repeat_pairs = sorted_repeats.items()
-        repeat_iter = iter(repeat_pairs)
-        yield next(repeat_iter)
+    def make_dict_with_repeats():
+        repeats = {}
+        for id, seq in sequences.items():
+            repeats_per_seq = count_repeats_per_seq(seq)
+            # add the repeats occ to get most occ repeat in all seq.
+            for repeat, counter in repeats_per_seq.items():
+                repeats[repeat] = repeats[repeat] + counter if repeat in repeats.keys() else counter
+        return repeats
+
+    def most_freq_repeat_all_seq():
+        repeats = make_dict_with_repeats()
+        # print(sorted(repeats.items()))
+        most_freq_repeat, most_count = "", 0
+        check = ["CGCGCCG", "CATCGCC", "TGCGCGC", "AATGGCA"]
+        for n_mer, count in repeats.items():
+            if n_mer in check:
+                print(f"repeat: {n_mer}, count: {count}")
+            if count > most_count:
+                most_freq_n_mer, most_count = n_mer, count
+        return most_freq_n_mer, most_count
+
+    return most_freq_repeat_all_seq

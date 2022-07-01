@@ -13,13 +13,9 @@ def read_fasta(fasta):
     for line in fasta:
         line = line.rstrip()
         if line.startswith('>'):
-            if id == "":
-                header = line.split('|')[-1]
-                id = header.split(' ')[0]
-                continue
-            sequences[id] = sequence
-            header = line.split('|')[-1]
-            id = header.split(' ')[0]
+            if id != "":
+                sequences[id] = sequence
+            id = line.split(' ')[0][1:]
             sequence = ""
         else:
             sequence += line

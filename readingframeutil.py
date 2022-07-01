@@ -28,34 +28,26 @@ def get_all_orfs(sequences, id = None):
     STOP_CODONS = ["TAA", "TAG", "TGA"]
 
     # reading frame 1, 2, or 4
-    def get_pos_and_orfs_per_seq(reading_frame, start_pos):
-        orf = ""
-        all_orfs = []
-        start_codon_found, stop_codon_found = False, False
-        for idx in range(start_pos, len(reading_frame), 3):
-            codon = reading_frame[idx:idx+3]
+    def get_pos_and_orfs_per_seq(sequence, start_pos):
+        orfs = []
+        for i in range(start_pos, len(sequence), 3):
+            codon = sequence[i:i+3]
+            # once we hit start codon, we will loop over until we hit first stop codon
             if codon == START_CODON:
-                start_codon_found = True
-                start_codon_pos = idx + 1  #  to know where the longest orf occured
-            if codon in STOP_CODONS: stop_codon_found = True
+                for j in range(i+3, len(sequence), 3):
+                    codon = sequence[j:j+3]
+                    if codon in STOP_CODONS:
+                        orfs.append((i+1, sequence[i:j+3]))  # i+1 since pos is not index
+                        break
+        return orfs
 
-            if not start_codon_found:
-                continue
-
-            orf += codon
-            if stop_codon_found:
-                all_orfs.append((start_codon_pos, orf))
-                start_codon_found, stop_codon_found, orf = False, False, ""
-
-        return all_orfs
-
-    def get_orfs_from_all_sequences(start_pos):
+    def get_orfs_from_all_sequences(reading_frame):
         orfs_all_sequences = {}
         for _id, _seq in sequences.items():
             # if we need operation only for one ID, skip others
             if id is not None and _id != id:
                 continue
-            pos_and_orfs_per_seq = get_pos_and_orfs_per_seq(_seq, start_pos)
+            pos_and_orfs_per_seq = get_pos_and_orfs_per_seq(_seq, reading_frame - 1)
             if len(pos_and_orfs_per_seq) != 0:
                 orfs_all_sequences[_id] = pos_and_orfs_per_seq
 
@@ -64,7 +56,7 @@ def get_all_orfs(sequences, id = None):
     return get_orfs_from_all_sequences
 
 
-def get_longest_orf_per_each_seq(all_orfs, fall_back = ""):
+def get_longest_orf_per_each_seq(all_orfs):
     """
     Takes a dictionary of type:
     {id: [(pos, orf), (pos2, orf2), ...], ...}
@@ -72,9 +64,11 @@ def get_longest_orf_per_each_seq(all_orfs, fall_back = ""):
     """
     id_wise_longest_orf = {}
     for id, pos_orf_list in all_orfs.items():
-        orfs = [(pos, orf) for pos, orf in pos_orf_list]
-        longest_orf = max(orfs, key=lambda item: len(item[1]))
-        id_wise_longest_orf[id] = longest_orf
+        longest_orf_pos, longest_orf = pos_orf_list[0]
+        for pos, orf in pos_orf_list[1:]:
+            if len(orf) > len(longest_orf):
+                longest_orf_pos, longest_orf = pos, orf
+        id_wise_longest_orf[id] = (longest_orf_pos, longest_orf)
 
     return id_wise_longest_orf
 
@@ -83,11 +77,10 @@ def get_longest_orf_of_all_seq(id_wise_longest_orf):
     Takes a dictionary of type {id: (pos, longest_orf), ...}
     and returns the id, pos and longest_orf of all
     """
-    max_length = 0
-    max_orf_id = ""
-    for id, pos_orf_value in id_wise_longest_orf.items():
-        pos, orf = pos_orf_value
-        if max_length < len(orf):
-            max_orf_id = id
+    lg_orf_id = list(id_wise_longest_orf.keys())[0]
+    lg_orf_pos, lg_orf = id_wise_longest_orf[lg_orf_id]
+    for id, (pos, orf) in id_wise_longest_orf.items():
+        if len(orf) > len(lg_orf):
+            lg_orf_id, lg_orf_pos, lg_orf = id, pos, orf
 
-    return id, id_wise_longest_orf[id]
+    return lg_orf_id, (lg_orf_pos, lg_orf)
